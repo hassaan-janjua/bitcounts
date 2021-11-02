@@ -58,7 +58,6 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
 
 uint8_t lut8[256];
 uint8_t lut4[16];
-uint64_t lut8c;
 
 void init_lut_4bit() {
   uint16_t i;
@@ -105,6 +104,7 @@ uint8_t bittwidling_count_32bit(uint32_t n) {
   return (((n + (n >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
+
 uint8_t basic_count_loop_8bit(uint8_t n) {
   uint8_t c = 0;
   while (n) {
@@ -114,6 +114,7 @@ uint8_t basic_count_loop_8bit(uint8_t n) {
   return c;
 }
 
+
 uint8_t basic_count_loop_32bit(uint32_t n) {
   uint8_t c = 0;
   while (n) {
@@ -122,6 +123,7 @@ uint8_t basic_count_loop_32bit(uint32_t n) {
   }
   return c;
 }
+
 
 uint8_t basic_count_no_loop_8bit(uint8_t n) {
   uint8_t c = 0;
@@ -150,6 +152,7 @@ uint8_t basic_count_no_loop_32bit(uint32_t n) {
   return c;
 }
 
+
 struct bits {
   uint8_t  a:1;
   uint8_t  b:1;
@@ -166,6 +169,7 @@ uint8_t bitfield_count_8bit(uint8_t n) {
   return b->a + b->b + b->c + b->d + b->e + b->f + b->g + b->h;
 }
 
+
 struct bits_32bit {
   uint32_t  a1:1; uint32_t  a2:1; uint32_t  a3:1; uint32_t  a4:1;
   uint32_t  b1:1; uint32_t  b2:1; uint32_t  b3:1; uint32_t  b4:1;
@@ -177,7 +181,6 @@ struct bits_32bit {
   uint32_t  h1:1; uint32_t  h2:1; uint32_t  h3:1; uint32_t  h4:1;
 
 };
-
 
 uint8_t bitfield_count_32bit(uint32_t n) {
   struct bits_32bit *b =  (struct bits_32bit *)&n;
@@ -192,13 +195,16 @@ uint8_t lut8_count_8bit(uint8_t n) {
   return lut8[n];
 }
 
+
 uint8_t lut8_count_32bit(uint32_t n) {
   return lut8[n&0xFF] + lut8[(n>>8) & 0xFF] + lut8[(n>>16) & 0xFF] + lut8[n>>24];
 }
 
+
 uint8_t lut4_count_8bit(uint8_t n) {
   return lut4[n&0xF] + lut4[n>>4];
 }
+
 
 uint8_t lut4_count_32bit(uint32_t n) {
   return  lut4[n&0xF]          + lut4[(n>>4)  & 0xF] + lut4[(n>>8)  & 0xF] + lut4[(n>>12) & 0xF] +
@@ -210,9 +216,11 @@ uint8_t lutc4_count_8bit(uint8_t n) {
   return LUTC4_8bit(n);
 }
 
+
 uint8_t lutc4_count_32bit(uint32_t n) {
   return LUTC4_32bit(n);
 }
+
 
 void benchmark32(uint8_t (*f)(uint32_t), uint32_t n, char *name) {
   uint64_t t;
@@ -228,6 +236,7 @@ void benchmark32(uint8_t (*f)(uint32_t), uint32_t n, char *name) {
   printf("%s: %"PRIu64 "\t\t%"PRIu64 "\n", name, t, v);
 
 }
+
 
 void benchmark8(uint8_t (*f)(uint8_t), uint32_t n, char *name) {
   uint64_t t;
@@ -262,6 +271,7 @@ int test_bit_counter_8bit(uint8_t (*f)(uint8_t), char *message) {
   return passed;
 }
 
+
 int test_bit_counter_32bit(uint8_t (*f)(uint32_t), char *message) {
   int passed = 1;
 
@@ -289,7 +299,6 @@ int test_bit_counter_32bit(uint8_t (*f)(uint32_t), char *message) {
     printf("Failed: %s\n", message);
   }
 
-
   return passed;
 }
 
@@ -307,9 +316,6 @@ void test_bit_counters() {
   test_bit_counter_8bit(logn_count_8bit, "logn_count_8bit");
   test_bit_counter_8bit(bittwidling_count_8bit, "bittwidling_count_8bit");
 
-
-
-
   test_bit_counter_32bit(basic_count_no_loop_32bit, "basic_count_no_loop_32bit");
   test_bit_counter_32bit(bitfield_count_32bit, "bitfield_count_32bit");
   test_bit_counter_32bit(basic_count_loop_32bit, "basic_count_loop_32bit");
@@ -320,6 +326,7 @@ void test_bit_counters() {
   test_bit_counter_32bit(bittwidling_count_32bit, "bittwidling_count_32bit");
 
 }
+
 
 void becnhmark_bit_counters() {
   init_lut_8bit();
@@ -333,7 +340,6 @@ void becnhmark_bit_counters() {
   benchmark8(lut4_count_8bit,            10000000, "lut4_count_8bit           ");
   benchmark8(bittwidling_count_8bit,     10000000, "bittwidling_count_8bit    ");
   benchmark8(lut8_count_8bit,            10000000, "lut8_count_8bit           ");
-
 
   printf("\n");
 
