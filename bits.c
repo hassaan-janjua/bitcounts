@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <time.h>
+#include <Memoryapi.h>
 
 #define LUTC4_8bit(v) (((0xe9949440 >> (((v)>>3) & 0x1E)) & 3) + ((((v)) & 0xF0) != 0) + ((0xe9949440 >> (((v)<<1) & 0x1E)) & 3) + ((((v)) & 0x0F) != 0))
 
@@ -27,6 +28,9 @@ void init_lut_8bit();
 
 uint8_t logn_count_8bit(uint8_t n);
 uint8_t logn_count_32bit(uint32_t n);
+
+uint8_t brian_kernighan_count_8bit(uint8_t n);
+uint8_t brian_kernighan_count_32bit(uint32_t n);
 
 uint8_t basic_count_loop_8bit(uint8_t n);
 uint8_t basic_count_loop_32bit(uint32_t n);
@@ -56,13 +60,13 @@ int64_t timespecDiff(struct timespec *timeA_p, struct timespec *timeB_p)
            ((timeB_p->tv_sec * 1000000000) + timeB_p->tv_nsec);
 }
 
-uint8_t lut8[256];
-uint8_t lut4[16];
+uint8_t *lut8;
+uint8_t *lut4;
 
 void init_lut_4bit() {
   uint16_t i;
   for (i=0; i < 16; i++) {
-    lut4[i] = basic_count_loop_8bit(i);
+    lut4[i] = basic_count_loop_32bit(i);
   }
 }
 
@@ -104,6 +108,24 @@ uint8_t bittwidling_count_32bit(uint32_t n) {
   return (((n + (n >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
+uint8_t brian_kernighan_count_8bit(uint8_t n) {
+  uint8_t c = 0;
+  while (n) {
+    n &= n-1;
+    c++;
+  }
+  return c;
+}
+
+
+uint8_t brian_kernighan_count_32bit(uint32_t n) {
+  uint8_t c = 0;
+  while (n) {
+    n &= n-1;
+    c++;
+  }
+  return c;
+}
 
 uint8_t basic_count_loop_8bit(uint8_t n) {
   uint8_t c = 0;
@@ -113,7 +135,6 @@ uint8_t basic_count_loop_8bit(uint8_t n) {
   }
   return c;
 }
-
 
 uint8_t basic_count_loop_32bit(uint32_t n) {
   uint8_t c = 0;
@@ -307,6 +328,7 @@ void test_bit_counters() {
   init_lut_8bit();
   init_lut_4bit();
 
+  test_bit_counter_8bit(brian_kernighan_count_8bit, "brian_kernighan_count_8bit");
   test_bit_counter_8bit(basic_count_no_loop_8bit, "basic_count_no_loop_8bit");
   test_bit_counter_8bit(bitfield_count_8bit, "bitfield_count_8bit");
   test_bit_counter_8bit(basic_count_loop_8bit, "basic_count_loop_8bit");
@@ -316,6 +338,8 @@ void test_bit_counters() {
   test_bit_counter_8bit(logn_count_8bit, "logn_count_8bit");
   test_bit_counter_8bit(bittwidling_count_8bit, "bittwidling_count_8bit");
 
+
+  test_bit_counter_32bit(brian_kernighan_count_32bit, "brian_kernighan_count_32bit");
   test_bit_counter_32bit(basic_count_no_loop_32bit, "basic_count_no_loop_32bit");
   test_bit_counter_32bit(bitfield_count_32bit, "bitfield_count_32bit");
   test_bit_counter_32bit(basic_count_loop_32bit, "basic_count_loop_32bit");
@@ -332,29 +356,46 @@ void becnhmark_bit_counters() {
   init_lut_8bit();
   init_lut_4bit();
 
-  benchmark8(basic_count_no_loop_8bit,   10000000, "basic_count_no_loop_8bit  ");
-  benchmark8(bitfield_count_8bit,        10000000, "bitfield_count_8bit       ");
-  benchmark8(basic_count_loop_8bit,      10000000, "basic_count_loop_8bit     ");
-  benchmark8(lutc4_count_8bit,           10000000, "lutc4_count_8bit          ");
-  benchmark8(logn_count_8bit,            10000000, "logn_count_8bit           ");
-  benchmark8(lut4_count_8bit,            10000000, "lut4_count_8bit           ");
-  benchmark8(bittwidling_count_8bit,     10000000, "bittwidling_count_8bit    ");
-  benchmark8(lut8_count_8bit,            10000000, "lut8_count_8bit           ");
+  benchmark8(basic_count_no_loop_8bit,   10000000,  "basic_count_no_loop_8bit     ");
+  benchmark8(bitfield_count_8bit,        10000000,  "bitfield_count_8bit          ");
+  benchmark8(basic_count_loop_8bit,      10000000,  "basic_count_loop_8bit        ");
+  benchmark8(lutc4_count_8bit,           10000000,  "lutc4_count_8bit             ");
+  benchmark8(brian_kernighan_count_8bit, 10000000,  "brian_kernighan_count_8bit   ");
+  benchmark8(logn_count_8bit,            10000000,  "logn_count_8bit              ");
+  benchmark8(lut4_count_8bit,            10000000,  "lut4_count_8bit              ");
+  benchmark8(bittwidling_count_8bit,     10000000,  "bittwidling_count_8bit       ");
+  benchmark8(lut8_count_8bit,            10000000,  "lut8_count_8bit              ");
 
   printf("\n");
 
-  benchmark32(basic_count_no_loop_32bit, 10000000, "basic_count_no_loop_32bit ");
-  benchmark32(bitfield_count_32bit,      10000000, "bitfield_count_32bit      ");
-  benchmark32(basic_count_loop_32bit,    10000000, "basic_count_loop_32bit    ");
-  benchmark32(lutc4_count_32bit,         10000000, "lutc4_count_32bit         ");
-  benchmark32(logn_count_32bit,          10000000, "logn_count_32bit          ");
-  benchmark32(lut4_count_32bit,          10000000, "lut4_count_32bit          ");
-  benchmark32(bittwidling_count_32bit,   10000000, "bittwidling_count_32bit   ");
-  benchmark32(lut8_count_32bit,          10000000, "lut8_count_32bit          ");
+  benchmark32(basic_count_no_loop_32bit,   10000000, "basic_count_no_loop_32bit   ");
+  benchmark32(bitfield_count_32bit,        10000000, "bitfield_count_32bit        ");
+  benchmark32(basic_count_loop_32bit,      10000000, "basic_count_loop_32bit      ");
+  benchmark32(lutc4_count_32bit,           10000000, "lutc4_count_32bit           ");
+  benchmark32(brian_kernighan_count_32bit, 10000000, "brian_kernighan_count_32bit ");
+  benchmark32(lut4_count_32bit,            10000000, "lut4_count_32bit            ");
+  benchmark32(logn_count_32bit,            10000000, "logn_count_32bit            ");
+  benchmark32(bittwidling_count_32bit,     10000000, "bittwidling_count_32bit     ");
+  benchmark32(lut8_count_32bit,            10000000, "lut8_count_32bit            ");
 }
 
-int main(void) {
 
+void* allocate_cache_free() {
+  void *p = VirtualAlloc(NULL, 4096,MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+  DWORD oldProtection;
+
+  VirtualProtect(p, 4096, PAGE_READWRITE|PAGE_NOCACHE|SEC_NOCACHE, &oldProtection);
+
+  lut8 = p;
+  lut4 = (uint8_t*)p + 256;
+
+
+  return p;
+}
+
+
+int main(void) {
+  allocate_cache_free();
   test_bit_counters();
   becnhmark_bit_counters();
 
